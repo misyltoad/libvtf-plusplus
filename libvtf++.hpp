@@ -262,6 +262,10 @@ namespace libvtf {
       case ImageFormats::LINEAR_DXT5:
       case ImageFormats::ATI2N:
         return numBlocks * 16;
+
+      default:
+        // Unknown type.
+        break;
     }
 
     return 0;
