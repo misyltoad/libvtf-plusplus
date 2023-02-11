@@ -486,11 +486,12 @@ namespace libvtf {
       }
 
       // Legacy path (7.0 - 7.2)
-      if (m_header.lowResImageWidth == 0 || m_header.lowResImageHeight == 0)
-        return nullptr;
-
-      const uint32_t lowResImageSize = getMemoryRequiredForMip(
-        m_header.lowResImageWidth, m_header.lowResImageHeight, 1u, m_header.lowResImageFormat);
+      uint32_t lowResImageSize = 0;
+      if (m_header.lowResImageWidth != 0 && m_header.lowResImageHeight != 0) {
+        lowResImageSize = getMemoryRequiredForMip(
+          m_header.lowResImageWidth, m_header.lowResImageHeight, 1u, m_header.lowResImageFormat);
+        printf("a: %d %d %d -> %d + %d\n", int(m_header.lowResImageWidth), int(m_header.lowResImageHeight), int(m_header.lowResImageFormat), int(m_header.headerSize), int(lowResImageSize));
+      }
 
       return &m_buffer[m_header.headerSize + lowResImageSize];
     }
@@ -506,6 +507,9 @@ namespace libvtf {
     }
 
     std::span<const uint8_t> lowResImageData() const {
+      if (m_header.lowResImageWidth == 0 || m_header.lowResImageHeight == 0)
+        return std::span<const uint8_t>();
+
       const uint32_t size = getMemoryRequiredForMip(
         m_header.lowResImageWidth, m_header.lowResImageHeight, 1u, m_header.lowResImageFormat);
 
@@ -547,34 +551,33 @@ namespace libvtf {
 
     uint32_t imageMipOffset(uint8_t mipLevel) const {
       uint32_t offset = 0;
-      for (uint8_t i = 0; i < mipLevel; i++)
-        offset += imageMipOffset(i);
+      for (int8_t i = int8_t(m_header.numMipLevels) - 1; i > int8_t(mipLevel); i--)
+        offset += imageMipSize(i) * m_header.numFrames * faceCount();
       return offset;
     }
 
-    uint32_t imageFaceSize(uint8_t startingMipLevel = 0) const {
+    uint32_t totalImageFaceSize() const {
       uint32_t size = 0;
       for (uint8_t i = 0; i < m_header.numMipLevels; i++) {
         auto [width, height, depth] = adjustImageSizeByMip(m_header.width, m_header.height, m_header.depth, i);
-
-        if (i >= startingMipLevel)
-          size += getMemoryRequiredForMip(width, height, depth, m_header.format);
+        size += getMemoryRequiredForMip(width, height, depth, m_header.format);
       }
       return size;
     }
 
     uint32_t imageTotalSize() const {
-      return this->faceCount() * m_header.numFrames * imageFaceSize();
+      return m_header.numFrames * this->faceCount() * totalImageFaceSize();
     }
 
     uint32_t imageOffset(uint16_t frame, uint16_t face, uint8_t mipLevel) const {
-      const uint32_t faceSize = imageFaceSize(0);
+      const uint32_t faceSize  = imageMipSize(mipLevel);
+      const uint32_t frameSize = faceCount() * faceSize;
 
-      const uint32_t frameOffset = frame * this->faceCount() * faceSize;
-      const uint32_t faceOffset = frameOffset + (face * faceSize);
-      const uint32_t mipOffset = faceOffset + imageMipOffset(mipLevel);
+      const uint32_t frameOffset = frame * frameSize;
+      const uint32_t faceOffset  = face * faceSize;
+      const uint32_t mipOffset   = imageMipOffset(mipLevel);
 
-      return mipOffset;
+      return faceOffset + frameOffset + mipOffset;
     }
 
     template <typename T>
@@ -602,7 +605,7 @@ namespace libvtf {
 
     template <typename T>
     static const T* spanGet(std::span<const uint8_t> data) {
-      if (data.size() > sizeof(T))
+      if (data.size() < sizeof(T))
         throw std::runtime_error("Cannot read type from data span (EOF)");
 
       return reinterpret_cast<const T*>(data.data());
