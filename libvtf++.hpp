@@ -490,7 +490,6 @@ namespace libvtf {
       if (m_header.lowResImageWidth != 0 && m_header.lowResImageHeight != 0) {
         lowResImageSize = getMemoryRequiredForMip(
           m_header.lowResImageWidth, m_header.lowResImageHeight, 1u, m_header.lowResImageFormat);
-        printf("a: %d %d %d -> %d + %d\n", int(m_header.lowResImageWidth), int(m_header.lowResImageHeight), int(m_header.lowResImageFormat), int(m_header.headerSize), int(lowResImageSize));
       }
 
       return &m_buffer[m_header.headerSize + lowResImageSize];
