@@ -8,6 +8,10 @@
 #include <span>
 #include <tuple>
 
+#ifndef _MSC_VER
+# define PACKED_STRUCT(name) struct __attribute__((packed)) name
+#endif
+
 namespace libvtf {
 
   namespace ImageFormats {
@@ -302,9 +306,11 @@ namespace libvtf {
       static constexpr uint32_t ASYNC_SKIP_INITIAL_LOW_RES = 0x80000000;
     }
 
+#ifdef _MSC_VER
 #pragma pack(push, 1)
+#endif
 
-    struct VTFBaseHeader {
+    PACKED_STRUCT(VTFBaseHeader) {
       static constexpr std::array<char, 4> ValidSignature = { 'V', 'T', 'F', '\0' };
 
       std::array<char, 4> signature{};
@@ -312,7 +318,7 @@ namespace libvtf {
       int32_t headerSize{};
     };
 
-    struct VTFHeader_7_0 : public VTFBaseHeader {
+    PACKED_STRUCT(VTFHeader_7_0) : public VTFBaseHeader {
       static constexpr std::array<int32_t, 2> Version = { 7, 0 };
 
       VTFHeader_7_0() = default;
@@ -331,17 +337,14 @@ namespace libvtf {
       uint8_t lowResImageHeight{};
     };
 
-    // Ensure struct is packed correctly.
-    static_assert(offsetof(VTFHeader_7_0, lowResImageFormat) == offsetof(VTFHeader_7_0, numMipLevels) + 1);
-
-    struct VTFHeader_7_1 : public VTFHeader_7_0 {
+    PACKED_STRUCT(VTFHeader_7_1) : public VTFHeader_7_0 {
       static constexpr std::array<int32_t, 2> Version = { 7, 1 };
 
       VTFHeader_7_1() = default;
       VTFHeader_7_1(const VTFHeader_7_0& header) : VTFHeader_7_0(header) { }
     };
 
-    struct VTFHeader_7_2 : public VTFHeader_7_1 {
+    PACKED_STRUCT(VTFHeader_7_2) : public VTFHeader_7_1 {
       static constexpr std::array<int32_t, 2> Version = { 7, 2 };
 
       VTFHeader_7_2() = default;
@@ -350,7 +353,7 @@ namespace libvtf {
       uint16_t depth{1};
     };
 
-    struct VTFHeader_7_3 : public VTFHeader_7_2 {
+    PACKED_STRUCT(VTFHeader_7_3) : public VTFHeader_7_2 {
       static constexpr std::array<int32_t, 2> Version = { 7, 3 };
 
       VTFHeader_7_3() = default;
@@ -359,21 +362,21 @@ namespace libvtf {
       alignas(4) uint32_t numResources{};
     };
 
-    struct VTFHeader_7_4 : public VTFHeader_7_3 {
+    PACKED_STRUCT(VTFHeader_7_4) : public VTFHeader_7_3 {
       static constexpr std::array<int32_t, 2> Version = { 7, 4 };
 
       VTFHeader_7_4() = default;
       VTFHeader_7_4(const VTFHeader_7_3& header) : VTFHeader_7_3(header) { }
     };
 
-    struct VTFHeader_7_5 : public VTFHeader_7_4 {
+    PACKED_STRUCT(VTFHeader_7_5) : public VTFHeader_7_4 {
       static constexpr std::array<int32_t, 2> Version = { 7, 5 };
 
       VTFHeader_7_5() = default;
       VTFHeader_7_5(const VTFHeader_7_4& header) : VTFHeader_7_4(header) { }
     };
 
-    struct VTFHeader_X360 : public VTFBaseHeader {
+    PACKED_STRUCT(VTFHeader_X360) : public VTFBaseHeader {
       static constexpr std::array<int32_t, 2> Version = { 0x0360, 8 };
 
       uint32_t flags{};
@@ -391,7 +394,7 @@ namespace libvtf {
       uint32_t compressedSize{};
     };
 
-    struct VTFHeader_PS3 : public VTFBaseHeader {
+    PACKED_STRUCT(VTFHeader_PS3) : public VTFBaseHeader {
       static constexpr std::array<int32_t, 2> Version = { 0x0333, 8 };
 
       uint32_t flags{};
@@ -409,7 +412,7 @@ namespace libvtf {
       uint32_t compressedSize{};
     };
 
-    struct VTFHeader : public VTFHeader_7_5 {
+    PACKED_STRUCT(VTFHeader) : public VTFHeader_7_5 {
       VTFHeader() = default;
       VTFHeader(const VTFHeader_7_5& header) : VTFHeader_7_5{ header } { }
       VTFHeader(const VTFHeader_7_4& header) : VTFHeader_7_5{ header } { }
@@ -427,47 +430,50 @@ namespace libvtf {
       static constexpr uint32_t HasNoDataChunk = 0x02;
     }
 
-    struct ResourceEntryInfo {
+    PACKED_STRUCT(ResourceEntryInfo) {
       uint32_t type : 24;
       uint32_t flags : 8;
       uint32_t offset; // Offset in bytes from beginning of file
     };
 
-    struct TextureLegacyImage {
+    PACKED_STRUCT(TextureLegacyImage) {
       static constexpr uint32_t ResourceID = MakeVTFResourceID(0x30, 0, 0);
       // Data follows...
     };
 
-    struct TextureLegacyLowResImage {
+    PACKED_STRUCT(TextureLegacyLowResImage) {
       static constexpr uint32_t ResourceID = MakeVTFResourceID(0x01, 0, 0);
       // Data follows...
     };
 
-    struct TextureSheet {
+    PACKED_STRUCT(TextureSheet) {
       static constexpr uint32_t ResourceID = MakeVTFResourceID(0x10, 0, 0);
       // Data follows...
     };
 
-    struct TextureLODControlSettings {
+    PACKED_STRUCT(TextureLODControlSettings) {
       static constexpr uint32_t ResourceID = MakeVTFResourceID('L', 'O', 'D');
 
       std::array<uint8_t, 2> resolutionClamp;
       std::array<uint8_t, 2> resolutionClamp360;
     };
 
-    struct TextureSettingsEx {
+    PACKED_STRUCT(TextureSettingsEx) {
       static constexpr uint32_t ResourceID = MakeVTFResourceID('T', 'S', '0');
 
       std::array<uint8_t, 4> flags;
     };
 
-    struct TextureCRC32 {
+    PACKED_STRUCT(TextureCRC32) {
       static constexpr uint32_t ResourceID = MakeVTFResourceID('C', 'R', 'C');
 
       uint32_t crc32;
     };
 
+#ifdef _MSC_VER
 #pragma pack(pop)
+#endif
+
   }
 
   class VTFData {
