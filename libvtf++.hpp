@@ -10,6 +10,9 @@
 
 #ifndef _MSC_VER
 # define PACKED_STRUCT(name) struct __attribute__((packed)) name
+#else
+// Use #pragma pack instead
+# define PACKED_STRUCT(name) struct name
 #endif
 
 namespace libvtf {
